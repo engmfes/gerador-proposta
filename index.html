@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gerador de Proposta · Moisés & Matheus</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --vinho: #7B1C2E;
+    --vinho-lt: #f5e8eb;
+    --cinza: #2C2C2C;
+    --cinza-md: #666;
+    --cinza-lt: #f4f4f4;
+    --borda: #e0e0e0;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f0f0;
+    color: var(--cinza);
+    min-height: 100vh;
+  }
+
+  /* ── Topo ── */
+  .topo {
+    background: var(--vinho);
+    padding: 20px 20px 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topo-inner { max-width: 600px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .topo-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .topo-icon svg { width: 22px; height: 22px; fill: white; }
+  .topo h1 { font-size: 16px; font-weight: 600; color: white; line-height: 1.2; }
+  .topo p  { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
+
+  /* ── Layout ── */
+  .container { max-width: 600px; margin: 0 auto; padding: 16px 16px 40px; }
+
+  /* ── Cards de seção ── */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .card-header {
+    background: var(--vinho);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-header span {
+    font-size: 12px; font-weight: 600; color: white;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .card-header .num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    font-size: 11px; font-weight: 700; color: white;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-body { padding: 16px; }
+
+  /* ── Campos ── */
+  .campo { margin-bottom: 14px; }
+  .campo:last-child { margin-bottom: 0; }
+  .campo label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--cinza-md); margin-bottom: 5px;
+  }
+  .campo label .obrig { color: var(--vinho); margin-left: 2px; }
+  .campo input,
+  .campo select,
+  .campo textarea {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--borda);
+    border-radius: var(--radius-sm);
+    font-size: 15px; color: var(--cinza);
+    background: white;
+    appearance: none; -webkit-appearance: none;
+    transition: border-color .15s;
+    font-family: inherit;
+  }
+  .campo select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  .campo textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .campo input:focus,
+  .campo select:focus,
+  .campo textarea:focus {
+    outline: none; border-color: var(--vinho);
+    box-shadow: 0 0 0 3px rgba(123,28,46,.1);
+  }
+  .campo input::placeholder,
+  .campo textarea::placeholder { color: #bbb; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Resumo financeiro ── */
+  .resumo {
+    background: var(--vinho-lt);
+    border: 1.5px solid rgba(123,28,46,.2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-top: 14px;
+  }
+  .resumo-linha {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(123,28,46,.1);
+    font-size: 13px;
+  }
+  .resumo-linha:last-child { border-bottom: none; padding-bottom: 0; }
+  .resumo-linha .rl { color: var(--cinza-md); }
+  .resumo-linha .rv { font-weight: 600; color: var(--cinza); }
+  .resumo-linha.total .rl { font-weight: 600; color: var(--vinho); font-size: 14px; }
+  .resumo-linha.total .rv { font-size: 20px; color: var(--vinho); }
+  .extenso-txt { font-size: 11px; color: var(--cinza-md); margin-top: 8px; font-style: italic; }
+
+  /* ── Info box ── */
+  .info-box {
+    background: #fffbe6; border: 1px solid #f0d060;
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    font-size: 12px; color: #7a6000; margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Botão gerar ── */
+  .btn-wrap { margin-top: 16px; }
+  .btn-gerar {
+    width: 100%; padding: 17px;
+    background: var(--vinho); color: white;
+    border: none; border-radius: var(--radius);
+    font-size: 17px; font-weight: 700;
+    cursor: pointer; letter-spacing: .01em;
+    box-shadow: 0 4px 16px rgba(123,28,46,.35);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: opacity .15s, transform .1s;
+    font-family: inherit;
+  }
+  .btn-gerar:active { transform: scale(.98); opacity: .9; }
+  .btn-gerar svg { width: 20px; height: 20px; fill: white; flex-shrink: 0; }
+  .btn-gerar:disabled { opacity: .5; cursor: default; }
+
+  /* ── Status ── */
+  .status {
+    margin-top: 12px; padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 500;
+    text-align: center; display: none;
+    line-height: 1.4;
+  }
+  .status.ok  { background: #e6f4ea; color: #1e6b35; display: block; }
+  .status.err { background: #fdecea; color: #c0392b; display: block; }
+  .status.carregando {
+    background: var(--vinho-lt); color: var(--vinho); display: block;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* ── Rodapé ── */
+  .rodape {
+    text-align: center; margin-top: 20px;
+    font-size: 11px; color: #aaa; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="topo">
+  <div class="topo-inner">
+    <div class="topo-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+    </div>
+    <div>
+      <h1>Gerador de Proposta-Contrato</h1>
+      <p>Patologia das Construções · Moisés &amp; Matheus</p>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 1. CONTRATANTE -->
+  <div class="card">
+    <div class="card-header"><div class="num">1</div><span>Dados do Contratante</span></div>
+    <div class="card-body">
+      <div class="campo">
+        <label>Nome completo / Razão social <span class="obrig">*</span></label>
+        <input id="nome" type="text" placeholder="Ex: Daniel Fagundes Pereira Barros" autocomplete="off" />
+      </div>
+      <div class="campo">
+        <label>CPF ou CNPJ <span class="obrig">*</span></label>
+        <input id="doc" type="text" placeholder="000.000.000-00 ou 00.000.000/0001-00" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. LOCAL -->
+  <div class="card">
+    <div class="card-header"><div class="num">2</div><span>Local do Serviço</span></div>
+    <div class="card-body">
+      <div class="campo">
+        <label>Cidade/UF</label>
+        <input id="cidade" type="text" value="Salvador/BA" style="max-width:200px" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ESCOPO -->
+  <div class="card">
+    <div class="card-header"><div class="num">3</div><span>Escopo do Serviço</span></div>
+    <div class="card-body">
+      <div class="campo">
+        <label>Objeto da inspeção <span class="obrig">*</span><br><small style="font-weight:400;color:#aaa">Aparece em: "…para o diagnóstico de [seu texto], localizado no…"</small></label>
+        <textarea id="objeto" placeholder="Ex: infiltrações e vazamentos na unidade 302 do bloco B">infiltrações e vazamentos</textarea>
+      </div>
+      <div class="campo">
+        <label>Endereço completo do imóvel <span class="obrig">*</span><br><small style="font-weight:400;color:#aaa">Aparece após "localizado no…"</small></label>
+        <input id="endereco" type="text" placeholder="Ex: Edf. CEO – Torre Londres – Sala 2801 – Salvador/BA" />
+      </div>
+      <div class="campo">
+        <label>Item do orçamento</label>
+        <input id="item_orc" type="text" value="Laudo Técnico de Engenharia + Mobilização + Ensaios Não Destrutivos" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. FINANCEIRO -->
+  <div class="card">
+    <div class="card-header"><div class="num">4</div><span>Financeiro</span></div>
+    <div class="card-body">
+      <div class="info-box">
+        💡 HT = 5% × sal. prof. (8,5 × R$1.518) → <strong>R$645,15/HT</strong> · IBAPE/BA · Lei 4.950-A/66
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Horas técnicas (HT)</label>
+          <input id="horas" type="number" min="0.5" step="0.5" value="10" inputmode="decimal" />
+        </div>
+        <div class="campo">
+          <label>Valor total (calculado automaticamente)</label>
+          <div id="valor-display" style="padding:12px 14px;border:1.5px solid #c8a0a8;border-radius:8px;font-size:17px;font-weight:700;color:#7B1C2E;background:#f5e8eb;">R$ 6.451,50</div>  <!-- atualizado por atualizarResumo() -->
+        </div>
+      </div>
+      <div class="campo">
+        <label>Condição de pagamento</label>
+        <select id="entrada_pct">
+          <option value="50">50% entrada + 50% na entrega</option>
+          <option value="30">30% entrada + 70% na entrega</option>
+          <option value="40">40% entrada + 60% na entrega</option>
+          <option value="60">60% entrada + 40% na entrega</option>
+          <option value="100">100% à vista na assinatura</option>
+        </select>
+      </div>
+
+      <div class="resumo" id="resumo"></div>
+    </div>
+  </div>
+
+  <!-- BOTÃO -->
+  <div class="btn-wrap">
+    <button class="btn-gerar" id="btn" onclick="gerarPDF()">
+      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      Gerar e Baixar PDF
+    </button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="rodape">
+    Moisés Ferreira Eleutério Silva · CREA/BA 3000043127<br>
+    Matheus da Silva Dias dos Santos · CREA/BA 3000103392
+  </div>
+
+</div>
+
+<script>
+// ─── Dados fixos ─────────────────────────────────────────────────────────────
+const ENG1 = {
+  nome: 'Moisés Ferreira Eleutério Silva',
+  titulo: 'Eng. Civil, Sanitarista e Ambiental',
+  crea: 'CREA/BA nº 3000043127',
+  cpf: '033.809.615-90',
+  tel: '(71) 99169-3939',
+  email: 'eng_mfes@yahoo.com.br'
+};
+const ENG2 = {
+  nome: 'Matheus da Silva Dias dos Santos',
+  titulo: 'Engenheiro Civil',
+  crea: 'CREA/BA nº 3000103392',
+  cpf: '025.070.915-50',
+  tel: '(71) 99223-6682',
+  email: 'matheussdias.eng@gmail.com'
+};
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho',
+               'julho','agosto','setembro','outubro','novembro','dezembro'];
+
+// ─── Utilidades ──────────────────────────────────────────────────────────────
+function fmtBRL(v) {
+  return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+}
+
+function extenso(n) {
+  n = Math.round(n);
+  if (n === 0) return 'zero reais';
+  const u = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove',
+    'dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const dez = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const cent = ['','cem','duzentos','trezentos','quatrocentos','quinhentos',
+    'seiscentos','setecentos','oitocentos','novecentos'];
+  let partes = [];
+  const mil = Math.floor(n / 1000);
+  const resto = n % 1000;
+  if (mil > 0) partes.push(mil === 1 ? 'mil' : (u[mil] || '') + ' mil');
+  if (resto >= 100) {
+    const c = Math.floor(resto / 100);
+    const r2 = resto % 100;
+    if (r2 === 0) partes.push(c === 1 ? 'cem' : cent[c]);
+    else partes.push(cent[c]);
+  }
+  const r3 = resto % 100;
+  if (r3 >= 20) {
+    const d = Math.floor(r3 / 10), uu = r3 % 10;
+    partes.push(dez[d] + (uu > 0 ? ' e ' + u[uu] : ''));
+  } else if (r3 > 0) {
+    partes.push(u[r3]);
+  }
+  return partes.join(' e ') + ' reais';
+}
+
+function dataHoje() {
+  const d = new Date();
+  return { dia: d.getDate(), mes: MESES[d.getMonth()], ano: d.getFullYear(),
+           diaNum: String(d.getDate()).padStart(2,'0'),
+           mesNum: String(d.getMonth()+1).padStart(2,'0') };
+}
+
+// ─── Resumo financeiro ───────────────────────────────────────────────────────
+const VALOR_HT = 645.15;
+
+function atualizarResumo() {
+  const horas  = parseFloat(document.getElementById('horas').value) || 0;
+  const valor  = Math.round(horas * VALOR_HT * 100) / 100;
+  const pct    = parseInt(document.getElementById('entrada_pct').value) || 50;
+  const entrada  = valor * pct / 100;
+  const residual = valor - entrada;
+
+  // Atualiza o display do valor calculado
+  document.getElementById('valor-display').textContent = fmtBRL(valor);
+
+  document.getElementById('resumo').innerHTML = `
+    <div class="resumo-linha total">
+      <span class="rl">Valor total</span>
+      <span class="rv">${fmtBRL(valor)}</span>
+    </div>
+    <div class="resumo-linha">
+      <span class="rl">Entrada (${pct}%) — assinatura</span>
+      <span class="rv">${fmtBRL(entrada)}</span>
+    </div>
+    <div class="resumo-linha">
+      <span class="rl">Saldo (${100-pct}%) — entrega</span>
+      <span class="rv">${fmtBRL(residual)}</span>
+    </div>
+    <div class="resumo-linha">
+      <span class="rl">${horas} HT × R$ 645,15/HT</span>
+      <span class="rv">${fmtBRL(valor)}</span>
+    </div>
+    <div class="extenso-txt">${extenso(valor)}</div>`;
+}
+['horas','entrada_pct'].forEach(id =>
+  document.getElementById(id).addEventListener('input', atualizarResumo));
+atualizarResumo();
+
+// ─── Geração do PDF ──────────────────────────────────────────────────────────
+const VINHO  = [123, 28, 46];
+const CINZA  = [44, 44, 44];
+const BRANCO = [255, 255, 255];
+const CINZA_LT = [245, 245, 245];
+const CINZA_MD = [120, 120, 120];
+
+function gerarPDF() {
+  // Coleta dados
+  const nome     = document.getElementById('nome').value.trim();
+  const doc      = document.getElementById('doc').value.trim();
+  const cidade   = document.getElementById('cidade').value.trim() || 'Salvador/BA';
+  const objeto   = document.getElementById('objeto').value.trim();
+  const endereco = document.getElementById('endereco').value.trim();
+  const item_orc = document.getElementById('item_orc').value.trim();
+  const horas    = parseFloat(document.getElementById('horas').value) || 10;
+  const valor    = Math.round(horas * 645.15 * 100) / 100;
+  const pct      = parseInt(document.getElementById('entrada_pct').value) || 50;
+  const entrada  = valor * pct / 100;
+  const residual = valor - entrada;
+
+  if (!nome || !doc || !objeto || !endereco) {
+    mostrarStatus('Preencha os campos obrigatórios: nome, CPF/CNPJ, objeto e endereço.', 'err');
+    return;
+  }
+
+  document.getElementById('btn').disabled = true;
+  mostrarStatus('Gerando PDF…', 'carregando');
+
+  setTimeout(() => {
+    try {
+      _buildPDF({ nome, doc, cidade, objeto, endereco, item_orc,
+                  horas, valor, pct, entrada, residual });
+      mostrarStatus('✓ PDF gerado e baixado com sucesso!', 'ok');
+    } catch(e) {
+      console.error(e);
+      mostrarStatus('Erro ao gerar PDF: ' + e.message, 'err');
+    }
+    document.getElementById('btn').disabled = false;
+  }, 100);
+}
+
+function _buildPDF(d) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // ── Constantes de layout ──────────────────────────────────────────────────
+  const PW = 210, PH = 297;
+  const ML = 20, MR = 20, MT = 18, MB = 22;  // MB aumentado para não sobrepoer rodapé
+  const CW = PW - ML - MR;          // 170mm largura útil
+  const LH = 5.5;                    // line-height padrão (mm) ≈ 1.5 linhas
+  const FS = 9.5;                    // font-size padrão (pt)
+  const VINHO   = [123, 28, 46];
+  const BRANCO  = [255, 255, 255];
+  const PRETO   = [44, 44, 44];
+  const CINZAM  = [110, 110, 110];
+  const CINZALT = [245, 245, 245];
+
+  const dt = dataHoje();
+  const dataStr = `Salvador/BA, ${dt.dia} de ${dt.mes} de ${dt.ano}`;
+  const refNum  = `Prop.${dt.diaNum}${dt.mesNum}-01/${dt.ano}`;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function font(size, style, color) {
+    pdf.setFontSize(size || FS);
+    pdf.setFont('helvetica', style || 'normal');
+    pdf.setTextColor(...(color || PRETO));
+  }
+
+  // Retorna largura de uma string em mm (unidade do documento)
+  function strW(str, sz) {
+    return pdf.getStringUnitWidth(str) * (sz || FS) / pdf.internal.scaleFactor;
+  }
+
+  // Escreve parágrafo justificado, retorna altura total consumida
+  function para(text, x, y, opts) {
+    const o   = opts || {};
+    const w   = o.w !== undefined ? o.w : CW;
+    const lh  = o.lh || LH;
+    const sz  = o.sz || FS;
+    const st  = o.bold ? 'bold' : 'normal';
+    const col = o.color || PRETO;
+    font(sz, st, col);
+    // Margem de segurança: jsPDF mede mal caracteres acentuados sem fontes embarcadas
+    // Usar 96% da largura para splitTextToSize evita palavras que ultrapassam a linha
+    const lines = pdf.splitTextToSize(text, w * 0.96);
+    lines.forEach((line, idx) => {
+      const isLast = idx === lines.length - 1;
+      const words  = line.trim().split(/\s+/).filter(Boolean);
+      if (!isLast && words.length > 1) {
+        // Mede cada palavra individualmente para evitar erros de escala
+        const wordWidths = words.map(wd => strW(wd, sz));
+        const totalWordW = wordWidths.reduce((a, b) => a + b, 0);
+        const gap = (w - totalWordW) / (words.length - 1);
+        let cx = x;
+        words.forEach((word, wi) => {
+          pdf.text(word, cx, y + idx * lh);
+          cx += wordWidths[wi] + gap;
+        });
+      } else {
+        // Ultima linha ou linha unica: alinha esquerda normalmente
+        pdf.text(line.trim(), x, y + idx * lh);
+      }
+    });
+    return lines.length * lh;
+  }
+
+  // Desenha banner de seção e retorna a posição y após o banner (pronto para conteúdo)
+  function secao(title, y) {
+    const bannerH = 8;  // altura total do banner
+    pdf.setFillColor(...VINHO);
+    pdf.rect(ML, y, CW, bannerH, 'F');
+    font(9.5, 'bold', BRANCO);
+    pdf.text(title, ML + 4, y + 5.5);  // texto centrado verticalmente dentro do banner
+    return y + bannerH;  // retorna posição logo abaixo do banner
+  }
+
+  // Verifica se há espaço suficiente; se não, adiciona nova página e retorna MT
+  function checkPage(y, need) {
+    const limit = PH - MB - 10;  // -10 para margem extra acima do rodapé
+    if (y + (need || 20) > limit) {
+      pdf.addPage();
+      rodapeUltimaPagina = false;  // nova página ainda sem rodapé
+      return MT;
+    }
+    return y;
+  }
+
+  function rodape() {
+    const n = pdf.getNumberOfPages();
+    for (let p = 1; p <= n; p++) {
+      pdf.setPage(p);
+      font(7, 'normal', [160, 160, 160]);
+      // Linha separadora acima do rodapé
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.2);
+      pdf.line(ML, PH - MB + 2, ML + CW, PH - MB + 2);
+      pdf.text(
+        `Engenharia & Consultoria Especializada  *  ${dataStr}  *  Pag. ${p}/${n}`,
+        PW / 2, PH - MB + 7, { align: 'center' }
+      );
+    }
+  }
+
+  function hline(y, r, g, b, w) {
+    pdf.setDrawColor(r||200, g||200, b||200);
+    pdf.setLineWidth(w || 0.3);
+    pdf.line(ML, y, ML + CW, y);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CABECALHO — dois blocos bem separados
+  // ══════════════════════════════════════════════════════════════════════════
+  let rodapeUltimaPagina = true;  // flag auxiliar (não usada ativamente)
+  let y = MT;
+
+  // Bloco esquerdo: título
+  font(18, 'bold', VINHO);
+  pdf.text('PROPOSTA-CONTRATO', ML, y);
+  y += 7;
+  font(11, 'bold', VINHO);
+  pdf.text('CONSULTORIA EM PATOLOGIA DAS CONSTRUCOES', ML, y);
+  y += 5;
+
+  // Bloco direito: engenheiros (posicionado absolutamente no topo)
+  const xR = ML + CW;
+  font(8.5, 'bold', PRETO);
+  pdf.text(ENG1.nome, xR, MT, { align: 'right' });
+  font(8, 'normal', CINZAM);
+  pdf.text(ENG1.titulo, xR, MT + 4.5, { align: 'right' });
+  pdf.text(ENG1.crea,   xR, MT + 9,   { align: 'right' });
+  font(8.5, 'bold', PRETO);
+  pdf.text(ENG2.nome, xR, MT + 15, { align: 'right' });
+  font(8, 'normal', CINZAM);
+  pdf.text(ENG2.titulo, xR, MT + 19.5, { align: 'right' });
+  pdf.text(ENG2.crea,   xR, MT + 24,   { align: 'right' });
+
+  // Garante que y não sobreponha os engenheiros (eles vão ate MT+24)
+  y = Math.max(y, MT + 29);
+
+  // Linha separadora + identificação do imóvel
+  hline(y, ...VINHO, 0.8);
+  y += 5;
+  font(9, 'bold', VINHO);
+  pdf.text(`${d.endereco}   |   ${dataStr}`, xR, y, { align: 'right' });
+  y += 9;
+
+  // ── Carta ──────────────────────────────────────────────────────────────────
+  font(8.5, 'normal', CINZAM);
+  pdf.text(dataStr, xR, y, { align: 'right' });
+  y += LH + 1;
+
+  font(9, 'bold', PRETO);
+  pdf.text(`Ref.    ${refNum}`, ML, y);
+  y += LH + 1;
+  font(9, 'normal', PRETO);
+  pdf.text('Ass:  Proposta/Contrato para Consultoria em Patologia das Construcoes.', ML, y);
+  y += LH + 1;
+
+  font(9.5, 'bold', PRETO);
+  pdf.text('Prezado(s) Senhor(es),', ML, y);
+  y += LH + 2;
+
+  y += para(
+    `Em atendimento a vossa solicitacao, o presente documento refere-se a proposta-contrato para a prestacao de servico de Consultoria para elaboracao de Laudo Tecnico de Engenharia para o diagnostico de ${d.objeto}, localizado no ${d.endereco}.`,
+    ML, y
+  ) + 4;
+
+  y += para(
+    'O presente documento tem o objetivo de descrever o escopo dos servicos, investimentos e responsabilidades do contratado e do contratante.',
+    ML, y
+  ) + 9;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // DEFINICAO DOS TERMOS
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 35);
+  y = secao('DEFINICAO DOS TERMOS', y) + 6;
+
+  y += para(
+    `Contratante: ${d.nome} (${d.doc}), com poderes para contratar, aditar, reduzir, rescindir, assumindo a responsabilidade sobre os onus e encargos financeiros desta Proposta / Contrato.`,
+    ML, y
+  ) + 4;
+
+  y += para(
+    `Contratada: ${ENG1.nome} - Eng. Civil, Sanitarista e Ambiental, inscrito no ${ENG1.crea} e ${ENG2.nome} - Eng. Civil, inscrito no ${ENG2.crea}, responsaveis pela execucao dos servicos do escopo deste contrato.`,
+    ML, y
+  ) + 9;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // METODOLOGIA
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 35);
+  y = secao('METODOLOGIA', y) + 6;
+
+  y += para(
+    'O trabalho sera desenvolvido em conformidade com a Norma de Inspecao Predial Nacional do IBAPE-Nacional, a NBR 12722/92, a NBR 13752/24 e a NBR 16747/20, que delimitam as diretrizes, criterios e procedimentos gerais e especificos relativos a vistoria e inspecao predial de edificacoes. A analise e producao do conteudo tecnico sera realizada por profissionais devidamente habilitados, amparados legalmente pelo CREA, conforme Lei Federal 5.194/1966.',
+    ML, y
+  ) + 9;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ESCOPO
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 60);
+  y = secao('ESCOPO (PRODUTO)', y) + 6;
+
+  y += para(
+    'O servico compoe a inspecao tecnica para diagnostico das infiltracoes e vazamentos, com definicao de um plano de acao contendo medidas corretivas e/ou preventivas. Tambem esta incluso o uso de equipamentos nao destrutivos, tais quais termografia, geofone, tracadores luminescentes e etc, alem de metodologias para quali-quantificacao dos danos, auxiliando nas investigacoes referente as manifestacoes patologicas provenientes de falhas congenitas, construtivas e/ou adquiridas na edificacao ou unidade privativa.',
+    ML, y
+  ) + 4;
+
+  font(FS, 'bold', PRETO);
+  pdf.text('Serao realizadas as seguintes etapas:', ML, y);
+  y += LH + 2;
+
+  const etapas = [
+    '1)  Inspecao in loco;',
+    '2)  Ensaios tecnologicos com uso de equipamentos nao destrutivos.',
+    '3)  Redacao de Parecer Tecnico.'
+  ];
+  etapas.forEach(e => {
+    y += para(e, ML + 6, y, { w: CW - 6 }) + 2;
+  });
+  y += 3;
+
+  y += para(
+    'Obs: Apos a conclusao da investigacao tecnica, podera ser indicada a necessidade de utilizacao de equipamentos de alta precisao, tais como cameras endoscopicas ou sistemas roboticos, para inspecao interna de tubulacoes de esgoto, drenagem ou agua fria. O emprego desses recursos nao integra o escopo inicial deste servico e podera ser acrescido, caso necessario, em trecho e extensao especificos previamente definidos pela equipe tecnica responsavel, conforme o resultado das analises e laudos emitidos.',
+    ML, y, { sz: 9 }
+  ) + 4;
+
+  font(FS, 'bold', PRETO);
+  pdf.text('Entregaveis:', ML, y);
+  y += LH + 1;
+  font(FS, 'normal', PRETO);
+  pdf.text('- Laudo tecnico de deteccao de infiltracao incluindo solucoes terapeuticas.', ML + 5, y);
+  y += LH + 9;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ATRIBUICOES E RESPONSABILIDADES
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 45);
+  y = secao('ATRIBUICOES E RESPONSABILIDADES', y) + 6;
+
+  font(FS, 'bold', PRETO);
+  pdf.text('Da Contratada:', ML, y);
+  y += LH + 1;
+  [
+    'Assumir responsabilidades tecnicas e civis em relacao ao servico prestado;',
+    'Entregar os documentos tecnicos dentro dos prazos acordados.'
+  ].forEach(r => {
+    y += para(`- ${r}`, ML + 5, y, { w: CW - 5 }) + 2;
+  });
+
+  y += 4;
+  font(FS, 'bold', PRETO);
+  pdf.text('Do Contratante:', ML, y);
+  y += LH + 1;
+  [
+    'Fornecer documentos tecnicos (plantas e memoriais) necessarios ao escopo;',
+    'Permitir acesso a edificacao, conforme agendamento previo;',
+    'Efetuar os pagamentos dentro dos prazos acordados.'
+  ].forEach(r => {
+    y += para(`- ${r}`, ML + 5, y, { w: CW - 5 }) + 2;
+  });
+  y += 8;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PRAZOS
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 28);
+  y = secao('PRAZOS PARA REALIZACAO DO SERVICO', y) + 6;
+
+  y += para(
+    'Ate 3 (tres) dias uteis a partir da assinatura para inicio dos servicos. Para entrega final do Laudo Tecnico, ate 10 (dez) dias uteis contados a partir da finalizacao da inspecao geral.',
+    ML, y
+  ) + 9;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INVESTIMENTO
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 75);
+  y = secao('INVESTIMENTO PARA REALIZACAO DO SERVICO', y) + 6;
+
+  y += para(
+    `Os honorarios sao calculados com base no Art. 8o das Diretrizes de Honorarios do IBAPE/BA, com horas tecnicas a 5% do salario minimo profissional vigente (8,5 x R$ 1.518,00 = R$ 12.903,00), resultando em R$ 645,15/HT (Lei 4.950-A/66).`,
+    ML, y
+  ) + 7;
+
+  // Tabela 1 — Horas
+  const RH = 7.5;  // row height
+  const COL_AT = CW * 0.72, COL_HT = CW * 0.28;
+
+  // Header
+  pdf.setFillColor(...VINHO);
+  pdf.rect(ML, y, CW, RH, 'F');
+  font(9, 'bold', BRANCO);
+  pdf.text('Atividade a ser executada', ML + 3, y + 5);
+  pdf.text('Horas Tecnicas (HT)', ML + COL_AT + COL_HT / 2, y + 5, { align: 'center' });
+  y += RH;
+
+  // Row 1
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(ML, y, CW, RH, 'F');
+  pdf.setDrawColor(210, 210, 210); pdf.setLineWidth(0.2);
+  pdf.rect(ML, y, CW, RH, 'S');
+  font(9, 'normal', PRETO);
+  pdf.text('Inspecao Tecnica e Ensaios complementares', ML + 3, y + 5);
+  pdf.text(d.horas.toFixed(2), ML + COL_AT + COL_HT / 2, y + 5, { align: 'center' });
+  y += RH;
+
+  // Total row
+  pdf.setFillColor(...CINZALT);
+  pdf.rect(ML, y, CW, RH, 'F');
+  pdf.setDrawColor(210, 210, 210);
+  pdf.rect(ML, y, CW, RH, 'S');
+  font(9, 'bold', PRETO);
+  pdf.text('TOTAL DE HORAS TECNICAS', ML + 3, y + 5);
+  pdf.text(d.horas.toFixed(2), ML + COL_AT + COL_HT / 2, y + 5, { align: 'center' });
+  y += RH + 7;
+
+  // Tabela 2 — Valores
+  const COL_IT = CW * 0.60, COL_QT = CW * 0.10, COL_VL = CW * 0.30;
+
+  pdf.setFillColor(...VINHO);
+  pdf.rect(ML, y, CW, RH, 'F');
+  font(9, 'bold', BRANCO);
+  pdf.text('Item', ML + 3, y + 5);
+  pdf.text('Qtde.', ML + COL_IT + COL_QT / 2, y + 5, { align: 'center' });
+  pdf.text('Valor', ML + COL_IT + COL_QT + COL_VL / 2, y + 5, { align: 'center' });
+  y += RH;
+
+  // Calcula altura da linha do item
+  font(8.5, 'normal', PRETO);
+  const iLines = pdf.splitTextToSize(d.item_orc, COL_IT - 6);
+  const iRowH  = Math.max(RH, iLines.length * LH + 4);
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(ML, y, CW, iRowH, 'F');
+  pdf.setDrawColor(210, 210, 210);
+  pdf.rect(ML, y, CW, iRowH, 'S');
+  // Linhas verticais da tabela
+  pdf.line(ML + COL_IT, y, ML + COL_IT, y + iRowH);
+  pdf.line(ML + COL_IT + COL_QT, y, ML + COL_IT + COL_QT, y + iRowH);
+  font(8.5, 'normal', PRETO);
+  pdf.text(iLines, ML + 3, y + 5);
+  pdf.text('1', ML + COL_IT + COL_QT / 2, y + iRowH / 2 + 1.5, { align: 'center' });
+  pdf.text(fmtBRL(d.valor), ML + COL_IT + COL_QT + COL_VL / 2, y + iRowH / 2 + 1.5, { align: 'center' });
+  y += iRowH;
+
+  // Total
+  pdf.setFillColor(...CINZALT);
+  pdf.rect(ML, y, CW, RH, 'F');
+  pdf.setDrawColor(210, 210, 210);
+  pdf.rect(ML, y, CW, RH, 'S');
+  pdf.line(ML + COL_IT, y, ML + COL_IT, y + RH);
+  pdf.line(ML + COL_IT + COL_QT, y, ML + COL_IT + COL_QT, y + RH);
+  font(9, 'bold', PRETO);
+  pdf.text('TOTAL', ML + 3, y + 5);
+  pdf.text(fmtBRL(d.valor), ML + COL_IT + COL_QT + COL_VL / 2, y + 5, { align: 'center' });
+  y += RH + 7;
+
+  y = checkPage(y, 30);
+  y += para(
+    `Pelo cumprimento do escopo, o contratado devera ser remunerado com ${fmtBRL(d.valor)} (${extenso(d.valor)}). Pagamento: ${d.pct}% de entrada (${fmtBRL(d.entrada)}) na assinatura e ${100-d.pct}% restantes (${fmtBRL(d.residual)}) apos a entrega do Laudo Tecnico.`,
+    ML, y
+  ) + 4;
+
+  y += para(
+    `Transferencia bancaria: Banco do Brasil - Ag. 2816-9 / CC 219935-1 / CPF ${ENG1.cpf} ou PIX (chave CPF: ${ENG1.cpf}). Comprovante para ${ENG1.email}. Atrasos: juros 2% a.m. + multa de 2%.`,
+    ML, y, { sz: 9 }
+  ) + 10;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PENALIDADES
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 28);
+  y = secao('PENALIDADES', y) + 6;
+  y += para(
+    'Fica estabelecida multa de 10% (dez por cento) sobre o valor total do contrato contra a parte que infringir qualquer clausula, independente das sancoes judiciais pertinentes.',
+    ML, y
+  ) + 10;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // RESCISAO
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 32);
+  y = secao('RESCISAO', y) + 6;
+  y += para(
+    'O contrato podera ser rescindido de pleno direito, sem notificacao previa, em caso de descumprimento de qualquer clausula, ou mediante comunicacao oficial por escrito ate 7 (sete) dias apos a assinatura. As etapas ja executadas serao medidas e faturadas. Quando aplicavel, a ART sera cancelada perante o CREA.',
+    ML, y
+  ) + 10;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FORO
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 22);
+  y = secao('FORO', y) + 6;
+  y += para(
+    'Elegem as partes o foro da Comarca de Salvador/BA para dirimir quaisquer duvidas decorrentes deste contrato.',
+    ML, y
+  ) + 4;
+
+  y += para(
+    'VALIDADE: Esta proposta possui validade de 5 (cinco) dias corridos a partir da data acima fixada.',
+    ML, y
+  ) + 14;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ASSINATURAS
+  // ══════════════════════════════════════════════════════════════════════════
+  y = checkPage(y, 60);
+  hline(y, ...VINHO, 0.8);
+  y += 13;
+
+  const NCOLS = 3;
+  const colW  = CW / NCOLS;
+  const assBlocos = [
+    { label: 'CONTRATANTE', name: d.nome, sub1: d.doc },
+    { label: 'CONTRATADA',  name: ENG1.nome, sub1: ENG1.crea, sub2: `CPF: ${ENG1.cpf}`, sub3: ENG1.tel },
+    { label: 'CONTRATADA',  name: ENG2.nome, sub1: ENG2.crea, sub2: `CPF: ${ENG2.cpf}`, sub3: ENG2.tel },
+  ];
+
+  assBlocos.forEach((b, i) => {
+    const cx = ML + i * colW + colW / 2;
+    const lx = ML + i * colW + 4;
+    const rx = ML + (i + 1) * colW - 4;
+    pdf.setDrawColor(...CINZAM);
+    pdf.setLineWidth(0.3);
+    pdf.line(lx, y, rx, y);
+    font(8, 'bold', PRETO);
+    const nameLines = pdf.splitTextToSize(b.name, colW - 8);
+    pdf.text(nameLines, cx, y + 5, { align: 'center' });
+    const nameH = nameLines.length * 4;
+    font(7.5, 'normal', CINZAM);
+    pdf.text(b.label, cx, y + 5 + nameH, { align: 'center' });
+    if (b.sub1) pdf.text(b.sub1, cx, y + 5 + nameH + 4,   { align: 'center' });
+    if (b.sub2) pdf.text(b.sub2, cx, y + 5 + nameH + 8,   { align: 'center' });
+    if (b.sub3) pdf.text(b.sub3, cx, y + 5 + nameH + 12,  { align: 'center' });
+  });
+  y += 34;
+
+  // Testemunhas
+  y = checkPage(y, 25);
+  font(9, 'bold', PRETO);
+  pdf.text('Testemunhas:', ML, y);
+  y += LH + 3;
+
+  const halfW = CW / 2;
+  [0, halfW].forEach(ox => {
+    pdf.setDrawColor(...CINZAM);
+    pdf.setLineWidth(0.3);
+    pdf.line(ML + ox + 3, y, ML + ox + halfW - 3, y);
+    font(8, 'normal', CINZAM);
+    pdf.text('Nome: _____________________________', ML + ox + 3, y + 5);
+    pdf.text('CPF:   _____________________________', ML + ox + 3, y + 10);
+  });
+  y += 19;
+
+  hline(y, ...VINHO, 0.8);
+
+  rodape();
+
+  // Salvar
+  const slug = d.nome.split(' ')[0].toLowerCase();
+  pdf.save(`Proposta_${slug}_${dt.diaNum}${dt.mesNum}${dt.ano}.pdf`);
+}
+
+
+function mostrarStatus(msg, tipo) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status ' + tipo;
+}
+</script>
+</body>
+</html>

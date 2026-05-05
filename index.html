@@ -664,9 +664,15 @@ function _buildPDF(d) {
   y += 3;
 
   y += para(
-    'Obs.: Após a conclusão da investigação técnica, poderá ser indicada a necessidade de utilização de equipamentos de alta precisão, tais como câmeras endoscópicas ou sistemas robóticos, para inspeção interna de tubulações de esgoto, drenagem ou água fria. O emprego desses recursos não integra o escopo inicial deste serviço e poderá ser acrescido, caso necessário, em trecho e extensão específicos previamente definidos pela equipe técnica responsável, conforme o resultado das análises e laudos emitidos.',
+    'OBS 1: Após a conclusão da investigação técnica, poderá ser indicada a necessidade de utilização de equipamentos de alta precisão, tais como câmeras endoscópicas ou sistemas robóticos, para inspeção interna de tubulações de esgoto, drenagem ou água fria. O emprego desses recursos não integra o escopo inicial deste serviço e poderá ser acrescido, caso necessário, em trecho e extensão específicos previamente definidos pela equipe técnica responsável, conforme o resultado das análises e laudos emitidos.',
     ML, y, { sz: 9 }
   ) + 4;
+
+  y = checkPage(y, 24);
+  y += para(
+    'OBS 2: Os equipamentos e métodos empregados na identificação, mapeamento e diagnóstico de infiltrações e vazamentos, incluindo termografia e demais técnicas de inspeção não destrutiva, apresentam limitações técnicas inerentes e sua precisão pode variar conforme as características da estrutura, do sistema de piso, da laje, da fachada, dos revestimentos ou dos elementos de vedação, bem como em função das condições de acesso ao local inspecionado. Em razão dessas limitações, poderá ser necessária a abertura de janelas de inspeção em pontos a serem definidos pela equipe técnica responsável, após análise dos resultados obtidos. Os custos eventualmente relacionados à abertura, recomposição, acabamento e mão de obra dessas intervenções serão de responsabilidade do contratante e não integram o escopo inicial deste serviço.',
+    ML, y, { sz: 9 }
+  ) + 6;
 
   font(FS, 'bold', PRETO);
   pdf.text('Entregáveis:', ML, y);
